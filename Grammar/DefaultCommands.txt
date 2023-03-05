@@ -1,0 +1,18 @@
+﻿Hello
+How are you
+Thank you
+Ori
+What time is it
+Open settings
+Close settings
+Check start with windows
+Uncheck start with windows
+Cancel
+Stop talking
+Stop listening
+Show commands
+Hide commands
+Shut down the computer
+Swith off voice
+Switch on voice
+Put the computer to sleep

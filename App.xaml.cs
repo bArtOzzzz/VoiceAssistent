@@ -13,5 +13,6 @@ namespace VoiceAssistent
     /// </summary>
     public partial class App : Application
     {
+
     }
 }
