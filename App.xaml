@@ -1,7 +1,7 @@
-﻿<Application x:Class="VoiceAssistent.App"
+﻿<Application x:Class="VoiceAssistant.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:VoiceAssistent"
+             xmlns:local="clr-namespace:VoiceAssistant"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          

@@ -1,11 +1,11 @@
-﻿<Window x:Name="VoiceAssistent" x:Class="VoiceAssistent.MainWindow"
+﻿<Window x:Name="VoiceAssistent" x:Class="VoiceAssistant.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:VoiceAssistent"
+        xmlns:local="clr-namespace:VoiceAssistant"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" AutomationProperties.Name="VoiceAssistent" WindowStartupLocation="CenterScreen" Loaded="VoiceAssistent_Loaded">
+        Title="MainWindow" Height="450" Width="800" AutomationProperties.Name="VoiceAssistent" WindowStartupLocation="CenterScreen" Loaded="VoiceAssistant_Loaded">
     <Grid Background="#FFE7E7E7">
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>

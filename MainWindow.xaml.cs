@@ -1,37 +1,36 @@
-﻿using System.Speech.Recognition;
+﻿using System.Collections.Generic;
+using System.Speech.Recognition;
 using System.Speech.Synthesis;
-using System.Globalization;
-using System.Threading;
-using System.Windows;
-using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Win32;
-using System.Diagnostics;
 using System.Windows.Controls;
+using System.Threading.Tasks;
+using System.Globalization;
+using System.Diagnostics;
 using System.Reflection;
-using System.Configuration;
+using System.Threading;
+using Microsoft.Win32;
+using System.Windows;
+using System.IO;
+using System;
 
-namespace VoiceAssistent
+namespace VoiceAssistant
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
+    // TODO: Use async
     public partial class MainWindow : Window
     {
-        private readonly CultureInfo cultureInfo;
         private readonly SpeechRecognitionEngine speechRecognitionEngine;
         private readonly SpeechSynthesizer speechSynthesizer;
+        private readonly CultureInfo cultureInfo;
 
-        private readonly SpeechRecognitionEngine speechRecognitionEngineParallel;
         private CancellationTokenSource cancellationToken = default!;
 
-        public Random rnd;
-        public AssistentResponces assistentResponces;
+        public AssistantResponces assistantResponces;
+
+        private readonly GrammarBuilder grammarBuilder;
+        private readonly Grammar grammar;
+        private readonly Choices choices;
 
         public bool isCanBeCanceled = false;
-        public bool isSwithedOnAssistentVoice = true;
+        public bool isSwithedOnAssistantVoice = true;
 
         private int RecTimeOut = 0;
 
@@ -41,9 +40,16 @@ namespace VoiceAssistent
             speechRecognitionEngine = new SpeechRecognitionEngine(cultureInfo);
             speechSynthesizer = new SpeechSynthesizer();
 
-            speechRecognitionEngineParallel = new SpeechRecognitionEngine(cultureInfo);
-            rnd = new Random();
-            assistentResponces = new AssistentResponces();
+            // TODO: Change reading from file to Configuration file
+            choices = new Choices(File.ReadAllLines("DefaultCommands.txt"));
+
+            grammarBuilder = new GrammarBuilder(choices)
+            {
+                Culture = cultureInfo
+            };
+            grammar = new Grammar(grammarBuilder);
+
+            assistantResponces = new AssistantResponces();
 
             InitializeComponent();
         }
@@ -66,40 +72,35 @@ namespace VoiceAssistent
                 GroupBox_SettingsPanel.Visibility = Visibility.Hidden;
         }
 
-        private async void VoiceAssistent_Loaded(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Initialization for assistant after UI was successfully loaded.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void VoiceAssistant_Loaded(object sender, RoutedEventArgs e)
         {
-            if (!cultureInfo.Name.Equals(CultureInfo.CurrentCulture.Name))
-                ListBox_DialogueStoryLogger.Items.Add($"For the assistent to work correctly, define the system language as English (en). Current language is: {CultureInfo.CurrentCulture}");
+            if (!cultureInfo.Equals(CultureInfo.CurrentCulture))
+                ListBox_DialogueStoryLogger.Items.Add($"For the assistant to work correctly, define the system language as English (en). Current language is: {CultureInfo.CurrentCulture}");
 
             speechRecognitionEngine.SetInputToDefaultAudioDevice();
-            speechRecognitionEngine.LoadGrammarAsync(new Grammar(new GrammarBuilder(new Choices(await File.ReadAllLinesAsync("DefaultCommands.txt")))));
+            speechRecognitionEngine.LoadGrammar(grammar);
 
-            speechRecognitionEngine.SpeechRecognized += new EventHandler<SpeechRecognizedEventArgs>(DefaultCommands_SpeechRecognized);
-            speechRecognitionEngine.SpeechDetected += new EventHandler<SpeechDetectedEventArgs>(Recognizer_SpeechRecognized);
+            // TODO: create delegates
+            speechRecognitionEngine.SpeechRecognized += new EventHandler<SpeechRecognizedEventArgs>(DefaultCommands_SpeechRecognized!);
+            speechRecognitionEngine.SpeechRecognized += new EventHandler<SpeechRecognizedEventArgs>(Startlistening_SpeechRecognized!);
+
+            speechRecognitionEngine.SpeechDetected += new EventHandler<SpeechDetectedEventArgs>(Recognizer_SpeechRecognized!);
+
             speechRecognitionEngine.RecognizeAsync(RecognizeMode.Multiple);
 
-            speechRecognitionEngineParallel.SetInputToDefaultAudioDevice();
-            speechRecognitionEngineParallel.LoadGrammarAsync(new Grammar(new GrammarBuilder(new Choices(File.ReadAllLines(@"DefaultCommands.txt")))));
-            speechRecognitionEngineParallel.SpeechRecognized += new EventHandler<SpeechRecognizedEventArgs>(Startlistening_SpeechRecognized);
-
-            // Текущее время суток
             ChangeGreeting();
 
-
-           /* 
-            t.Get("IsAutoRun");
-
-            // Автозагрузка сохранений
-            CheckBox_isAutorun.DataBindings.Add("Checked", Settings.Default, "IsAutoRun", true, DataSourceUpdateMode.OnPropertyChanged);
-            TextBox_ShotDownTimer.DataBindings.Add("Text", Settings.Default, "ShotDownTimer", true, DataSourceUpdateMode.OnPropertyChanged);
-            TextBox_HibernateTimer.DataBindings.Add("Text", Settings.Default, "HibernateStateTimer", true, DataSourceUpdateMode.OnPropertyChanged);*/
-
-            // Стартовое системное сообщение
+            // Default start message
             ListBox_DialogueStoryLogger.Items.Add("System: To view all commands, say Ori \"Show commands\"");
         }
 
         /// <summary>
-        /// Обновление таймера
+        /// Update timer. Event for <see cref="SpeechRecognitionEngine" />.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -109,127 +110,123 @@ namespace VoiceAssistent
         }
 
         /// <summary>
-        /// Голосовой ответ ИИ
+        /// Chosses random answer for assistent.
         /// </summary>
         /// <param name="e"></param>
         /// <param name="index"></param>
-        private async void ChooseAnswer(SpeechRecognizedEventArgs e, List<string> index)
+        // TODO: async void...
+        private async void AssistantRandomAnswer(SpeechRecognizedEventArgs e, List<string> index)
         {
             int ranNum;
-            string speech = e.Result.Text;
+            Random rnd = new();
 
             ranNum = rnd.Next(index.Count);
 
-            if (isSwithedOnAssistentVoice)
-            {
+            if (isSwithedOnAssistantVoice)
                 speechSynthesizer.SpeakAsync(index[ranNum]);
-            }
-            ListBox_DialogueStoryLogger.Items.Add($"You: {speech}");
+
+            ListBox_DialogueStoryLogger.Items.Add($"You: {e.Result.Text}");
 
             await Task.Delay(1000);
 
             if (index[ranNum] != null)
-            {
                 ListBox_DialogueStoryLogger.Items.Add($"Ori: {index[ranNum]}");
-            }
         }
 
-        private void DefaultCommands_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
+        /// <summary>
+        /// Assistant answers core.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void DefaultCommands_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
         {
-            string socialCommands = e.Result.Text;
-            string functionalCommands = e.Result.Text;
-
-            switch (socialCommands)
+            switch (e.Result.Text)
             {
                 case "Hello":
-                    ChooseAnswer(e, assistentResponces.Hello_Response);
+                    AssistantRandomAnswer(e, assistantResponces.Hello_Response);
                     break;
                 case "How are you":
-                    ChooseAnswer(e, assistentResponces.HowAreYou_Response);
+                    AssistantRandomAnswer(e, assistantResponces.HowAreYou_Response);
                     break;
                 case "Thank you":
-                    ChooseAnswer(e, assistentResponces.ThankYou_Response);
+                    AssistantRandomAnswer(e, assistantResponces.ThankYou_Response);
                     break;
-            }
-
-            switch (functionalCommands)
-            {
                 case "What time is it":
-                    ChooseAnswer(e, assistentResponces.TimeQuery_Response);
+                    AssistantRandomAnswer(e, assistantResponces.TimeQuery_Response);
                     break;
                 case "Stop talking":
                     speechSynthesizer.SpeakAsyncCancelAll();
-                    ChooseAnswer(e, assistentResponces.StopTalking_Response);
+                    AssistantRandomAnswer(e, assistantResponces.StopTalking_Response);
                     break;
                 case "Stop listening":
                     speechRecognitionEngine.RecognizeAsyncCancel();
-                    speechRecognitionEngineParallel.RecognizeAsync(RecognizeMode.Multiple);
-                    ChooseAnswer(e, assistentResponces.StopListening_Response);
+                    //speechRecognitionEngine.RecognizeAsync(RecognizeMode.Multiple);
+                    AssistantRandomAnswer(e, assistantResponces.StopListening_Response);
                     break;
                 case "Show commands":
-                    ListBox_DialogueStoryLogger.Items.Add($"You: {socialCommands}");
-                    ShowCommands();
+                    AssistantRandomAnswer(e, assistantResponces.OK_Response);
+                    await CommandsList();
                     break;
                 case "Hide commands":
-                    ListBox_CommandsList.Visibility = Visibility.Hidden;
-                    ListBox_DialogueStoryLogger.Items.Add($"You: {socialCommands}");
+                    AssistantRandomAnswer(e, assistantResponces.OK_Response);
+                    await CommandsList();
                     break;
                 case "Shut down the computer":
-                    ListBox_DialogueStoryLogger.Items.Add($"You: {socialCommands}");
                     isCanBeCanceled = true;
+                    AssistantRandomAnswer(e, assistantResponces.OK_Response);
                     ShutDownTheComputer(e);
                     break;
                 case "Cancel":
                     if (isCanBeCanceled)
                     {
                         cancellationToken.Cancel();
+                        AssistantRandomAnswer(e, assistantResponces.Cancell_Response);
                         isCanBeCanceled = false;
-                        ChooseAnswer(e, assistentResponces.Cancell_Response);
                     }
                     else
-                        ChooseAnswer(e, assistentResponces.ExceptionsLogo_Response);
+                        AssistantRandomAnswer(e, assistantResponces.ExceptionsLogo_Response);
                     break;
                 case "Open settings":
                     Settings_Click(sender, e);
-                    ChooseAnswer(e, assistentResponces.OK_Response);
+                    AssistantRandomAnswer(e, assistantResponces.OK_Response);
                     break;
                 case "Close settings":
                     Settings_Click(sender, e);
-                    ChooseAnswer(e, assistentResponces.OK_Response);
+                    AssistantRandomAnswer(e, assistantResponces.OK_Response);
                     break;
                 case "Check start with windows":
                     AutoRunCheckBoxState();
-                    ChooseAnswer(e, assistentResponces.OK_Response);
+                    AssistantRandomAnswer(e, assistantResponces.OK_Response);
                     break;
                 case "Uncheck start with windows":
                     AutoRunUncheckBoxState();
-                    ChooseAnswer(e, assistentResponces.OK_Response);
+                    AssistantRandomAnswer(e, assistantResponces.OK_Response);
                     break;
                 case "Switch off voice":
+                    isSwithedOnAssistantVoice = false;
                     speechSynthesizer.SpeakAsync("Voice off");
-                    isSwithedOnAssistentVoice = false;
-                    ListBox_DialogueStoryLogger.Items.Add($"You: {functionalCommands}");
+                    ListBox_DialogueStoryLogger.Items.Add($"You: {e.Result.Text}");
                     break;
                 case "Switch on voice":
-                    if (isSwithedOnAssistentVoice == false)
+                    if (!isSwithedOnAssistantVoice)
                     {
+                        isSwithedOnAssistantVoice = true;
                         speechSynthesizer.SpeakAsync("Voice on");
-                        isSwithedOnAssistentVoice = true;
-                        ListBox_DialogueStoryLogger.Items.Add($"You: {functionalCommands}");
+                        ListBox_DialogueStoryLogger.Items.Add($"You: {e.Result.Text}");
                     }
                     else
-                        ChooseAnswer(e, assistentResponces.ExceptionsLogo_Response);
+                        AssistantRandomAnswer(e, assistantResponces.ExceptionsLogo_Response);
                     break;
                 case "Put the computer to sleep":
-                    ListBox_DialogueStoryLogger.Items.Add($"You: {socialCommands}");
-                    HibernateState(e);
                     isCanBeCanceled = true;
+                    AssistantRandomAnswer(e, assistantResponces.OK_Response);
+                    HibernateState(e);
                     break;
             }
         }
 
         /// <summary>
-        /// Слово - активация ассистента
+        /// Keyword for assistent activation - Ori.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -237,45 +234,33 @@ namespace VoiceAssistent
         {
             string speech = e.Result.Text;
 
-            if (speech == "Ori" || speech == "Oi")
+            if (speech.Equals("Ori") || speech.Equals("Oi"))
             {
-                speechRecognitionEngineParallel.RecognizeAsyncCancel();
-                ChooseAnswer(e, assistentResponces.ActivationAssistentWord_Response);
+                //speechRecognitionEngine.RecognizeAsyncCancel();
+                AssistantRandomAnswer(e, assistantResponces.ActivationAssistantWord_Response);
                 speechRecognitionEngine.RecognizeAsync(RecognizeMode.Multiple);
             }
         }
 
         /// <summary>
-        /// Изменение приветствия в зависимости от времени суток
+        /// Changes greeting depend on current time.
         /// </summary>
         private void ChangeGreeting()
         {
             TimeSpan currentTime = DateTime.Now.TimeOfDay;
 
-            if (currentTime >= TimeSpan.Parse("12:01") &&
-                currentTime <= TimeSpan.Parse("16:00"))
-            {
+            if (currentTime >= TimeSpan.Parse("12:01") && currentTime <= TimeSpan.Parse("16:00"))
                 Label_GreetingText.Content = "Good afternoon";
-            }
-            else if (currentTime >= TimeSpan.Parse("16:01") &&
-                     currentTime <= TimeSpan.Parse("23:00"))
-            {
+            else if (currentTime >= TimeSpan.Parse("16:01") && currentTime <= TimeSpan.Parse("23:00"))
                 Label_GreetingText.Content = "Good evening";
-            }
-            else if (currentTime >= TimeSpan.Parse("23:01") &&
-                     currentTime <= TimeSpan.Parse("4:00"))
-            {
+            else if (currentTime >= TimeSpan.Parse("23:01") && currentTime <= TimeSpan.Parse("4:00"))
                 Label_GreetingText.Content = "Good night";
-            }
-            else if (currentTime >= TimeSpan.Parse("4:01") &&
-                     currentTime <= TimeSpan.Parse("12:00"))
-            {
+            else if (currentTime >= TimeSpan.Parse("4:01") && currentTime <= TimeSpan.Parse("12:00"))
                 Label_GreetingText.Content = "Good mornin";
-            }
         }
 
         /// <summary>
-        /// Таймер до выключения компьютера
+        /// Time before computer will be off.
         /// </summary>
         /// <param name="token"></param>
         private void ShutDownTimer(CancellationToken token)
@@ -284,30 +269,27 @@ namespace VoiceAssistent
             {
                 speechSynthesizer.SpeakAsync(i.ToString());
 
+                if (token.IsCancellationRequested)
+                    break;
+
                 Thread.Sleep(1000);
 
-                if (token.IsCancellationRequested)
-                {
-                    break;
-                }
-
                 if (i == 1)
-                {
                     Process.Start("cmd", "/c shutdown -s -f -t 00");
-                }
             }
         }
 
         /// <summary>
-        /// Выбор состояния для автозапуска программы с Windows
+        /// Sets autorun for application if true.
         /// </summary>
         /// <param name="autorun"></param>
         /// <returns></returns>
         public bool SetAutorunValue(bool autorun)
         {
-            const string name = "Ori assistent";
+            const string name = "Ori assistant";
             string ExePath = Directory.GetParent(Assembly.GetExecutingAssembly().Location)!.ToString();
             RegistryKey reg;
+
             reg = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run\\");
             try
             {
@@ -325,34 +307,41 @@ namespace VoiceAssistent
             return true;
         }
 
-
         /// <summary>
-        /// Метод раскрытия списка команд
+        /// Shows all existed commands.
         /// </summary>
-        private void ShowCommands()
+        private async Task<bool> CommandsList()
         {
-            string[] commands = File.ReadAllLines(@"DefaultCommands.txt");
-            ListBox_CommandsList.Items.Clear();
-            ListBox_CommandsList.SelectionMode = SelectionMode.Multiple;
-            ListBox_CommandsList.Visibility = Visibility.Visible;
-
-            foreach (string command in commands)
-            {
-                ListBox_CommandsList.Items.Add(command);
-            }
-
             if (GroupBox_SettingsPanel.Visibility.Equals(Visibility.Visible))
                 GroupBox_SettingsPanel.Visibility = Visibility.Hidden;
+
+            if (ListBox_CommandsList.Visibility.Equals(Visibility.Hidden))
+            {
+                string[] commands = await File.ReadAllLinesAsync("DefaultCommands.txt");
+                ListBox_CommandsList.Items.Clear();
+                ListBox_CommandsList.SelectionMode = SelectionMode.Multiple;
+
+                ListBox_CommandsList.Visibility = Visibility.Visible;
+
+                foreach (string command in commands)
+                {
+                    ListBox_CommandsList.Items.Add(command);
+                }
+
+                return true;
+            }
+            else
+                ListBox_CommandsList.Visibility = Visibility.Hidden;
+
+            return false;
         }
 
         /// <summary>
-        /// Голосовое выключение компьютера
+        /// Shot down the computer command.
         /// </summary>
         /// <param name="e"></param>
         private async void ShutDownTheComputer(SpeechRecognizedEventArgs e)
         {
-            string speech = e.Result.Text;
-
             cancellationToken = new CancellationTokenSource();
             var token = cancellationToken.Token;
 
@@ -362,7 +351,7 @@ namespace VoiceAssistent
             }
             catch (OperationCanceledException)
             {
-                ChooseAnswer(e, assistentResponces.ExceptionsLogo_Response);
+                AssistantRandomAnswer(e, assistantResponces.ExceptionsLogo_Response);
             }
             finally
             {
@@ -371,7 +360,7 @@ namespace VoiceAssistent
         }
 
         /// <summary>
-        /// Голосовая ативация автозапуска програмы с Windows
+        /// Set autorun the application with Windows command.
         /// </summary>
         private void AutoRunCheckBoxState()
         {
@@ -381,7 +370,7 @@ namespace VoiceAssistent
         }
 
         /// <summary>
-        /// Голосовая отмена автозапуска програмы с Windows
+        /// Unset autorun the application with Windows command.
         /// </summary>
         private void AutoRunUncheckBoxState()
         {
@@ -391,13 +380,11 @@ namespace VoiceAssistent
         }
 
         /// <summary>
-        /// Голосовая команда перевода компьютера в сон
+        /// Hibernate command.
         /// </summary>
         /// <param name="e"></param>
         private async void HibernateState(SpeechRecognizedEventArgs e)
         {
-            string speech = e.Result.Text;
-
             cancellationToken = new CancellationTokenSource();
             var token = cancellationToken.Token;
 
@@ -407,7 +394,7 @@ namespace VoiceAssistent
             }
             catch (OperationCanceledException)
             {
-                ChooseAnswer(e, assistentResponces.ExceptionsLogo_Response);
+                AssistantRandomAnswer(e, assistantResponces.ExceptionsLogo_Response);
             }
             finally
             {
@@ -416,7 +403,7 @@ namespace VoiceAssistent
         }
 
         /// <summary>
-        /// Таймер до перевода в сон
+        /// Timer befor computer will be hibernated.
         /// </summary>
         /// <param name="token"></param>
         private void HibernateStateTimer(CancellationToken token)

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace VoiceAssistent {
+namespace VoiceAssistant {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

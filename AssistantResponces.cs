@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System;
 
-namespace VoiceAssistent
+namespace VoiceAssistant
 {
-    public sealed class AssistentResponces
+    public sealed class AssistantResponces
     {
-        public List<string> ActivationAssistentWord_Response;
+        public List<string> ActivationAssistantWord_Response;
 
         public List<string> Hello_Response;
         public List<string> HowAreYou_Response;
@@ -17,9 +17,9 @@ namespace VoiceAssistent
         public List<string> ExceptionsLogo_Response;
         public List<string> OK_Response;
 
-        public AssistentResponces()
+        public AssistantResponces()
         {
-            ActivationAssistentWord_Response = new List<string>()
+            ActivationAssistantWord_Response = new List<string>()
             {
                 "I'm here", "I'm waiting for commands"
             };
