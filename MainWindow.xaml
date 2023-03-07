@@ -1,40 +1,45 @@
-﻿<Window x:Name="VoiceAssistent" x:Class="VoiceAssistent.MainWindow"
+﻿<Window x:Name="VoiceAssistent" x:Class="VoiceAssistant.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:VoiceAssistent"
+        xmlns:local="clr-namespace:VoiceAssistant"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" AutomationProperties.Name="VoiceAssistent" WindowStartupLocation="CenterScreen" Loaded="VoiceAssistent_Loaded">
+        Title="MainWindow" Height="450" Width="800" AutomationProperties.Name="VoiceAssistent" WindowStartupLocation="CenterScreen" Loaded="VoiceAssistant_Loaded">
     <Grid Background="#FFE7E7E7">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
         <DockPanel x:Name="DockPanel_LeftSideBar" LastChildFill="False" Background="#FF9A41FF" AutomationProperties.Name="DockPanel_LeftSideBar" RenderTransformOrigin="0.5,0.5" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalAlignment="Left" Width="181">
-            <Label x:Name="Label_SettingsText" Content="Settings" Cursor="Hand" Foreground="White" VerticalContentAlignment="Center" FontSize="20" DockPanel.Dock="Bottom" Margin="0,0,0,210" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalContentAlignment="Center" FontStretch="Medium" RenderTransformOrigin="0.5,1" TabIndex="1" Height="37"/>
+            <Label x:Name="Label_SettingsText" Content="Settings" Cursor="Hand" Foreground="White" VerticalContentAlignment="Center" FontSize="20" DockPanel.Dock="Bottom" Margin="0,0,0,210" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalContentAlignment="Center" FontStretch="Medium" RenderTransformOrigin="0.5,1" TabIndex="1" Height="37" MouseDown="Settings_Click"/>
             <MediaElement x:Name="MediaElement_Title" DockPanel.Dock="Top" Source="/Ori.gif" Margin="10,15,10,0" AutomationProperties.Name="MediaElement_Title" Panel.ZIndex="1" UnloadedBehavior="Play" Height="83" />
+            <Label x:Name="Label_DateTimeText" Content="Date" VerticalAlignment="Bottom" Margin="115,0,0,-245" FontSize="16" HorizontalContentAlignment="Center" Foreground="White" AutomationProperties.Name="Label_DateTimeText" Width="60"/>
         </DockPanel>
 
-        <GroupBox x:Name="GroupBox_SettingsPanel" Margin="218,55,218,55" TabIndex="7" FontSize="20" AutomationProperties.Name="GroupBox_SettingsPanel" Header="Settings" BorderBrush="Black" Foreground="Black">
+        <GroupBox x:Name="GroupBox_SettingsPanel" Margin="218,103,174,69" TabIndex="7" FontSize="20" AutomationProperties.Name="GroupBox_SettingsPanel" Header="Settings" BorderBrush="Black" Foreground="Black" Visibility="Hidden">
             <GroupBox.Background>
                 <SolidColorBrush Color="#FFC0C0FF" Opacity="1"/>
             </GroupBox.Background>
             <StackPanel x:Name="StackPanel_LayoutGroup" AutomationProperties.Name="StackPanel_LayoutGroup">
-                <CheckBox x:Name="CheckBox_isAutorun1" VerticalContentAlignment="Center" Margin="20,50,0,0" Width="119" TabIndex="2" Cursor="Hand" BorderBrush="Black" VerticalAlignment="Top" HorizontalAlignment="Left" AutomationProperties.Name="CheckBox_isAutorun" FontSize="16">
-                    <TextBlock x:Name="CheckBox_isAutorun" Text="Start with windows" FontSize="12" AutomationProperties.Name="CheckBox_isAutorun" Cursor="Hand" HorizontalAlignment="Right" />
+                <CheckBox x:Name="CheckBox_isAutorun" VerticalContentAlignment="Center" Margin="20,50,0,0" Width="119" TabIndex="2" Cursor="Hand" BorderBrush="Black" VerticalAlignment="Top" HorizontalAlignment="Left" AutomationProperties.Name="CheckBox_isAutorun" FontSize="16" IsChecked="False" Click="CheckBox_isAutorun_Click">
+                    <TextBlock x:Name="TextBlock_isAutoRun" Text="Start with windows" FontSize="12" AutomationProperties.Name="TextBlock_isAutoRun" Cursor="Hand" HorizontalAlignment="Right" />
                     <CheckBox.LayoutTransform>
                         <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
                     </CheckBox.LayoutTransform>
                 </CheckBox>
-                <TextBox x:Name="TextBox_ShotDownTimer" HorizontalAlignment="Left" Text="5" Width="22" Cursor="IBeam" TextAlignment="Center" FontSize="16" SelectionOpacity="1" UndoLimit="2" BorderBrush="Black" MaxLines="1" Margin="20,20,0,0" TabIndex="3" AutomationProperties.Name="TextBox_ShotDownTimer"/>
+                <TextBox x:Name="TextBox_ShotDownTimer" HorizontalAlignment="Left" Text="5" Width="22" Cursor="IBeam" TextAlignment="Center" FontSize="16" SelectionOpacity="1" UndoLimit="2" BorderBrush="Black" MaxLines="1" Margin="20,20,0,0" TabIndex="3" AutomationProperties.Name="TextBox_ShotDownTimer" PreviewTextInput="TextBox_ShotDownTimer_PreviewTextInput"/>
                 <Label x:Name="Label_ShotDownTimerText" Content="Shot down timer" Width="262" Padding="5,0,0,0" Margin="0,-25,0,0" FontSize="18" AutomationProperties.Name="Label_ShotDownTimerText" TabIndex="4" VerticalContentAlignment="Center"/>
-                <TextBox x:Name="TextBox_HibernateTimer" Text="5" Width="22" Cursor="IBeam" TextAlignment="Center" FontSize="16" TextWrapping="WrapWithOverflow" SelectionOpacity="1" UndoLimit="2" BorderBrush="Black" MaxLines="1" TabIndex="3" HorizontalAlignment="Left" Margin="20,20,0,0" AutomationProperties.Name="TextBox_HibernateTimer"/>
+                <TextBox x:Name="TextBox_HibernateTimer" Text="5" Width="22" Cursor="IBeam" TextAlignment="Center" FontSize="16" TextWrapping="WrapWithOverflow" SelectionOpacity="1" UndoLimit="2" BorderBrush="Black" MaxLines="1" TabIndex="3" HorizontalAlignment="Left" Margin="20,20,0,0" AutomationProperties.Name="TextBox_HibernateTimer" PreviewTextInput="TextBox_HibernateTimer_PreviewTextInput"/>
                 <Label x:Name="Label_HibernateText" Content="Hibernate timer" Width="262" Padding="5,0,0,0" FontSize="18" AutomationProperties.Name="Label_HibernateText" TabIndex="4" Margin="0,-25,0,0" VerticalContentAlignment="Center"/>
             </StackPanel>
-
-
-
         </GroupBox>
-
-        <Image HorizontalAlignment="Left" Height="100" Margin="715,228,0,0" VerticalAlignment="Top" Width="100"/>
-        <Label x:Name="Label1" Content="Label" HorizontalAlignment="Left" Margin="639,82,0,0" VerticalAlignment="Top" Height="47" Width="98" AutomationProperties.Name="Label1"/>
+        <ListBox x:Name="ListBox_DialogueStoryLogger" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="666,0,0,0" Background="#FF350077" Foreground="White" AutomationProperties.Name="ListBox_DialogueStoryLogger" TabIndex="2" SelectionMode="Extended" SelectedIndex="-1">
+            <ListBox.BorderBrush>
+                <SolidColorBrush Color="#FF350077" Opacity="1"/>
+            </ListBox.BorderBrush>
+        </ListBox>
+        <Label x:Name="Label_GreetingText" Content="Good afternoon!" HorizontalAlignment="Left" Margin="181,0,0,0" VerticalAlignment="Top" AutomationProperties.Name="Label_GreetingText" TabIndex="1" FontSize="32" Width="285" Padding="15,5,5,5"/>
+        <ListBox x:Name="ListBox_CommandsList" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="208,74,161,23" Background="#FF7A39D3" BorderBrush="#FF7A39D3" Foreground="White" FontSize="16" AutomationProperties.Name="ListBox_CommandsList" TabIndex="6" Visibility="Hidden"/>
 
     </Grid>
 </Window>
